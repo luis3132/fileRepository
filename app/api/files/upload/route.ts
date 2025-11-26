@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import { cookies } from 'next/headers';
 
 // Configuración para permitir archivos grandes (hasta 500MB)
 export const runtime = 'nodejs';
@@ -9,30 +8,12 @@ export const maxDuration = 600; // 10 minutos de timeout
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autenticación
-    const cookieStore = await cookies();
-    const session = cookieStore.get('session');
+    // Verificar token de autenticación desde el header
+    const authHeader = request.headers.get('authorization');
 
-    if (!session?.value) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'No autorizado - No hay sesión' },
-        { status: 401 }
-      );
-    }
-
-    // Validar que la sesión no haya expirado
-    try {
-      const sessionData = JSON.parse(Buffer.from(session.value, 'base64').toString());
-      if (!sessionData.expiresAt || Date.now() >= sessionData.expiresAt) {
-        return NextResponse.json(
-          { error: 'No autorizado - Sesión expirada' },
-          { status: 401 }
-        );
-      }
-    } catch (e) {
-      console.error('Error al validar sesión:', e);
-      return NextResponse.json(
-        { error: 'No autorizado - Sesión inválida' },
+        { error: 'No autorizado' },
         { status: 401 }
       );
     }

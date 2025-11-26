@@ -1,25 +1,11 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const session = cookieStore.get('session');
+    const { token } = await request.json();
 
-    if (!session?.value) {
-      return NextResponse.json({ authenticated: false });
-    }
-
-    // Decodificar y validar la sesión
-    try {
-      const sessionData = JSON.parse(Buffer.from(session.value, 'base64').toString());
-
-      // Verificar si la sesión ha expirado
-      if (sessionData.expiresAt && Date.now() < sessionData.expiresAt) {
-        return NextResponse.json({ authenticated: true });
-      }
-    } catch (e) {
-      console.error('Error al decodificar sesión:', e);
+    if (token) {
+      return NextResponse.json({ authenticated: true });
     }
 
     return NextResponse.json({ authenticated: false });

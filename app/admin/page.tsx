@@ -36,9 +36,8 @@ export default function AdminPage() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/check');
-      const data = await response.json();
-      setAuthenticated(data.authenticated);
+      const token = localStorage.getItem('authToken');
+      setAuthenticated(!!token);
     } catch (error) {
       console.error('Error al verificar autenticación:', error);
       setAuthenticated(false);
@@ -60,7 +59,10 @@ export default function AdminPage() {
         body: JSON.stringify({ username, password }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        localStorage.setItem('authToken', data.token);
         setAuthenticated(true);
         setUsername('');
         setPassword('');
@@ -75,7 +77,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      localStorage.removeItem('authToken');
       setAuthenticated(false);
       router.push('/');
     } catch (error) {
@@ -109,8 +111,12 @@ export default function AdminPage() {
     }
 
     try {
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/files/delete/${encodeURIComponent(filename)}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
@@ -135,13 +141,16 @@ export default function AdminPage() {
     setUploadSuccess(false);
 
     try {
+      const token = localStorage.getItem('authToken');
       const formData = new FormData();
       formData.append('file', selectedFile);
 
       const response = await fetch('/api/files/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
-        credentials: 'include',
       });
 
       if (response.ok) {
