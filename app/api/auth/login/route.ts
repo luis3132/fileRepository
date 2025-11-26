@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
 
       cookieStore.set('session', sessionToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: Date.now() + 4 * 60 * 60
       });
