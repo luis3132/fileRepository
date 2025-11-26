@@ -3,6 +3,10 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { cookies } from 'next/headers';
 
+// Configuración para permitir archivos grandes (hasta 500MB)
+export const runtime = 'nodejs';
+export const maxDuration = 600; // 10 minutos de timeout
+
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticación
