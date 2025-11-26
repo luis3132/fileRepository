@@ -13,13 +13,19 @@ export async function POST(request: NextRequest) {
     if (username === adminUsername && password === adminPassword) {
       const cookieStore = await cookies();
 
-      // Crear una sesión simple
-      const sessionToken = Buffer.from(`${username}:${Date.now()}`).toString('base64');
+      // Crear una sesión simple con timestamp de expiración
+      const expiresAt = Date.now() + (4 * 60 * 60 * 1000); // 4 horas en milisegundos
+      const sessionData = {
+        username,
+        expiresAt
+      };
+      const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64');
 
       cookieStore.set('session', sessionToken, {
         httpOnly: true,
         sameSite: 'lax',
-        maxAge: Date.now() + 4 * 60 * 60
+        maxAge: 4 * 60 * 60, // 4 horas en segundos
+        path: '/',
       });
 
       return NextResponse.json({ success: true });

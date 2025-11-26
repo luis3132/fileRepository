@@ -13,9 +13,26 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     const session = cookieStore.get('session');
 
-    if (!session) {
+    if (!session?.value) {
       return NextResponse.json(
-        { error: 'No autorizado' },
+        { error: 'No autorizado - No hay sesión' },
+        { status: 401 }
+      );
+    }
+
+    // Validar que la sesión no haya expirado
+    try {
+      const sessionData = JSON.parse(Buffer.from(session.value, 'base64').toString());
+      if (!sessionData.expiresAt || Date.now() >= sessionData.expiresAt) {
+        return NextResponse.json(
+          { error: 'No autorizado - Sesión expirada' },
+          { status: 401 }
+        );
+      }
+    } catch (e) {
+      console.error('Error al validar sesión:', e);
+      return NextResponse.json(
+        { error: 'No autorizado - Sesión inválida' },
         { status: 401 }
       );
     }
