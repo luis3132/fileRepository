@@ -2,8 +2,9 @@
 
 ## Usuario Admin
 
-**Usuario:** `admin`
-**Contraseña:** `X9k#mP2$vL8qR5nW`
+Tienes que crear un archivo .env con las variables de entorno:
+ - ADMIN_USERNAME: defines el usuario
+ - ADMIN_PASSWORD: defines la contrasena
 
 ## Importante
 
