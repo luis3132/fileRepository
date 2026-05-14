@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# File Repository - Sistema de Gestión de Archivos
 
-## Getting Started
+Servidor de gestión de archivos con autenticación para subir, listar, descargar y eliminar archivos.
 
-First, run the development server:
+## Requisitos
+
+- Bun (recomendado) o Node.js 18+
+- npm/yarn/pnpm
+
+## Instalación
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Configuración
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Copia el archivo de configuración de ejemplo:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env
+```
 
-## Learn More
+2. Edita `.env` con tus credenciales:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+ADMIN_USERNAME=tu_usuario
+ADMIN_PASSWORD=tu_contraseña_segura
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Ejecutar
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+bun run dev
+```
 
-## Deploy on Vercel
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Endpoints
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| POST | `/api/auth/login` | Iniciar sesión | No |
+| POST | `/api/auth/check` | Verificar token | No |
+| GET | `/api/files/list` | Listar archivos | Sí |
+| POST | `/api/files/upload` | Subir archivo | Sí |
+| GET | `/api/files/download/:name` | Descargar archivo | Sí |
+| DELETE | `/api/files/delete/:name` | Eliminar archivo | Sí |
+
+## Roles
+
+- **Público**: Ver y descargar archivos
+- **Admin**: Subir, eliminar y listar archivos
+
+## Medidas de Seguridad
+
+- Rate limiting en login (5 intentos/15min)
+- Tokens con expiración de 24h
+- Validación de nombres de archivo (previene path traversal)
+- Extensiones de archivo restringidas
+- Cabeceras de seguridad (CSP, X-Frame-Options, etc.)
+- Sanitización de datos en frontend
+
+## Estructura
+
+```
+├── app/
+│   ├── api/           # Endpoints de la API
+│   ├── admin/         # Panel de administración
+│   └── page.tsx       # Página principal
+├── lib/
+│   └── security.ts    # Utilidades de seguridad
+└── public/
+    └── uploads/       # Archivos subidos
+```

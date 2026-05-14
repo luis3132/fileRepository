@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
 import { readdir, stat } from 'fs/promises';
-import { join } from 'path';
+import { resolve } from 'path';
+
+const UPLOADS_DIR = 'public/uploads';
 
 export async function GET() {
   try {
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
+    const uploadsDir = resolve(process.cwd(), UPLOADS_DIR);
 
     try {
       const files = await readdir(uploadsDir);
 
       const fileDetails = await Promise.all(
         files.map(async (filename) => {
-          const filePath = join(uploadsDir, filename);
+          const filePath = resolve(uploadsDir, filename);
           const stats = await stat(filePath);
 
           return {
@@ -25,14 +27,9 @@ export async function GET() {
 
       return NextResponse.json({ files: fileDetails });
     } catch (error) {
-      console.error('Error al listar archivos:', error);
       return NextResponse.json({ files: [] });
     }
   } catch (error) {
-    console.error('Error al listar archivos:', error);
-    return NextResponse.json(
-      { error: 'Error al listar archivos' },
-      { status: 500 }
-    );
+    return NextResponse.json({ files: [] });
   }
 }

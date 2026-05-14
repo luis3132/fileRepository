@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { getSecurePath } from '@/app/lib/security';
 
 export async function GET(
   request: NextRequest,
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { filename } = await params;
-    const filePath = join(process.cwd(), 'public', 'uploads', filename);
+    const filePath = getSecurePath(filename);
 
     // Leer el archivo
     const fileBuffer = await readFile(filePath);

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { unlink } from 'fs/promises';
-import { join } from 'path';
+import { getSecurePath, validateToken } from '@/app/lib/security';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    // Verificar token de autenticación desde el header
     const authHeader = request.headers.get('authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -17,8 +16,16 @@ export async function DELETE(
       );
     }
 
+    const token = authHeader.replace('Bearer ', '');
+    if (!validateToken(token)) {
+      return NextResponse.json(
+        { error: 'Token inválido o expirado' },
+        { status: 401 }
+      );
+    }
+
     const { filename } = await params;
-    const filePath = join(process.cwd(), 'public', 'uploads', filename);
+    const filePath = getSecurePath(filename);
 
     // Eliminar el archivo
     await unlink(filePath);

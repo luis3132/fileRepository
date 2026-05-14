@@ -95,7 +95,16 @@ export default function AdminPage() {
   const fetchFiles = async () => {
     setLoadingFiles(true);
     try {
-      const response = await fetch('/api/files/list');
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/files/list', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.status === 401) {
+        handleLogout();
+        return;
+      }
       const data = await response.json();
       setFiles(data.files || []);
     } catch (error) {
@@ -103,6 +112,10 @@ export default function AdminPage() {
     } finally {
       setLoadingFiles(false);
     }
+  };
+
+  const sanitizeFilename = (name: string): string => {
+    return name.replace(/[<>\"'&]/g, '');
   };
 
   const handleDelete = async (filename: string) => {
@@ -299,7 +312,7 @@ export default function AdminPage() {
               />
               {selectedFile && (
                 <p className="mt-2 text-sm text-gray-600">
-                  Archivo seleccionado: <span className="font-medium">{selectedFile.name}</span>
+                  Archivo seleccionado: <span className="font-medium">{sanitizeFilename(selectedFile.name)}</span>
                 </p>
               )}
             </div>
@@ -360,7 +373,7 @@ export default function AdminPage() {
                   {files.map((file, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {file.name}
+                        {sanitizeFilename(file.name)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatFileSize(file.size)}

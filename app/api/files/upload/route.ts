@@ -1,19 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { resolve } from 'path';
+import { validateToken, validateFilename } from '@/app/lib/security';
 
-// Configuración para permitir archivos grandes (hasta 500MB)
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const UPLOADS_DIR = 'public/uploads';
+
 export const runtime = 'nodejs';
-export const maxDuration = 600; // 10 minutos de timeout
+export const maxDuration = 600;
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar token de autenticación desde el header
     const authHeader = request.headers.get('authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    if (!validateToken(token)) {
+      return NextResponse.json(
+        { error: 'Token inválido o expirado' },
         { status: 401 }
       );
     }
@@ -28,29 +38,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Leer el archivo
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'El archivo excede el tamaño máximo de 500MB' },
+        { status: 400 }
+      );
+    }
+
+    const safeFilename = validateFilename(file.name);
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Crear el directorio si no existe
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
+    const uploadsDir = resolve(process.cwd(), UPLOADS_DIR);
     try {
       await mkdir(uploadsDir, { recursive: true });
     } catch (error) {
       console.error('Error al crear el directorio de uploads:', error);
     }
 
-    // Guardar el archivo
-    const filePath = join(uploadsDir, file.name);
+    const filePath = resolve(uploadsDir, safeFilename);
     await writeFile(filePath, buffer);
 
     return NextResponse.json({
       success: true,
-      filename: file.name,
+      filename: safeFilename,
       size: file.size
     });
-  } catch (error) {
-    console.error('Error al subir archivo:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Error al subir archivo:', message);
+    
+    if (message.includes('no permitida') || message.includes('inválido')) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    
     return NextResponse.json(
       { error: 'Error al subir el archivo' },
       { status: 500 }

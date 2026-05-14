@@ -30,6 +30,10 @@ export default function Home() {
     }
   };
 
+  const sanitizeFilename = (name: string): string => {
+    return name.replace(/[<>\"'&]/g, '');
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -86,7 +90,7 @@ export default function Home() {
                 {files.map((file, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {file.name}
+                      {sanitizeFilename(file.name)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatFileSize(file.size)}
