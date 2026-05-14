@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ['neogestify-ui-components'],
   experimental: {
     serverActions: {
       bodySizeLimit: '500mb',

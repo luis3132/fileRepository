@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  Button,
+  Table,
+  Loading,
+  ThemeToggle,
+} from 'neogestify-ui-components';
+import { ClientOnly } from '@/components/ClientOnly';
+
+export const dynamic = 'force-dynamic';
 
 interface FileInfo {
   name: string;
@@ -46,99 +55,54 @@ export default function Home() {
     return new Date(dateString).toLocaleString('es-ES');
   };
 
+  const tableHeaders = ['Nombre', 'Tamaño', 'Fecha', 'Acción'];
+  const tableRows = files.map((file) => [
+    sanitizeFilename(file.name),
+    formatFileSize(file.size),
+    formatDate(file.uploadedAt),
+    <a
+      key={file.name}
+      href={file.downloadUrl}
+      className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+    >
+      Descargar
+    </a>,
+  ]);
+
   return (
-    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4 sm:py-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left w-full sm:w-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white text-center sm:text-left w-full sm:w-auto">
             Archivos Disponibles
           </h1>
-          <Link
-            href="/admin"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-center text-sm sm:text-base"
-          >
-            Administración
-          </Link>
+          <div className="flex items-center justify-center sm:justify-end gap-4">
+            <ClientOnly>
+              <ThemeToggle />
+            </ClientOnly>
+            <Link href="/admin">
+              <Button variant="primary" className="text-sm">
+                Administración
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">Cargando archivos...</p>
+            <Loading />
           </div>
         ) : files.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6 sm:p-8 text-center">
-            <p className="text-gray-600">No hay archivos disponibles</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 sm:p-8 text-center">
+            <p className="text-gray-600 dark:text-gray-400">No hay archivos disponibles</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nombre
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tamaño
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fecha
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acción
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {files.map((file, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {sanitizeFilename(file.name)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatFileSize(file.size)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(file.uploadedAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <a
-                          href={file.downloadUrl}
-                          className="text-blue-600 hover:text-blue-900 font-medium"
-                        >
-                          Descargar
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="sm:hidden divide-y divide-gray-200">
-              {files.map((file, index) => (
-                <div key={index} className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-900 break-all">
-                      {sanitizeFilename(file.name)}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                    <span>
-                      <span className="font-medium">Tamaño:</span> {formatFileSize(file.size)}
-                    </span>
-                    <span>
-                      <span className="font-medium">Fecha:</span> {formatDate(file.uploadedAt)}
-                    </span>
-                  </div>
-                  <a
-                    href={file.downloadUrl}
-                    className="inline-block text-sm text-blue-600 hover:text-blue-900 font-medium"
-                  >
-                    Descargar
-                  </a>
-                </div>
-              ))}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table
+                columns={tableHeaders}
+                rows={tableRows}
+              />
             </div>
           </div>
         )}

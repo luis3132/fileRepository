@@ -1,8 +1,24 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  Button,
+  Input,
+  Form,
+  Table,
+  Loading,
+  Modal,
+  InfoAlert,
+  ThemeToggle,
+  AlertaAdvertencia,
+  AlertaExito,
+  AlertaError,
+} from 'neogestify-ui-components';
+import { ClientOnly } from '@/components/ClientOnly';
+
+export const dynamic = 'force-dynamic';
 
 interface FileInfo {
   name: string;
@@ -23,6 +39,7 @@ export default function AdminPage() {
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const router = useRouter();
+  const modalRef = useRef<{ handleClose: () => void } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -36,10 +53,10 @@ export default function AdminPage() {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       setAuthenticated(!!token);
-    } catch (error) {
-      console.error('Error al verificar autenticación:', error);
+    } catch (err) {
+      console.error('Error al verificar autenticación:', err);
       setAuthenticated(false);
     } finally {
       setLoading(false);
@@ -62,27 +79,29 @@ export default function AdminPage() {
       const data = await response.json();
 
       if (response.ok && data.token) {
-        localStorage.setItem('authToken', data.token);
+        if (typeof window !== 'undefined') localStorage.setItem('authToken', data.token);
         setAuthenticated(true);
         setUsername('');
         setPassword('');
       } else {
         setError(data.error || 'Credenciales inválidas');
       }
-    } catch (error) {
-      console.error('Error al iniciar sesión:', error);
+    } catch (err) {
+      console.error('Error al iniciar sesión:', err);
       setError('Error al iniciar sesión');
     }
   };
 
   const handleLogout = async () => {
-    try {
-      localStorage.removeItem('authToken');
-      setAuthenticated(false);
-      router.push('/');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
+    AlertaAdvertencia(
+      'Cerrar sesión',
+      '¿Estás seguro de que deseas cerrar sesión?',
+      async () => {
+        if (typeof window !== 'undefined') localStorage.removeItem('authToken');
+        setAuthenticated(false);
+        router.push('/');
+      }
+    );
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +114,7 @@ export default function AdminPage() {
   const fetchFiles = async () => {
     setLoadingFiles(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/files/list', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -107,8 +126,8 @@ export default function AdminPage() {
       }
       const data = await response.json();
       setFiles(data.files || []);
-    } catch (error) {
-      console.error('Error al cargar archivos:', error);
+    } catch (err) {
+      console.error('Error al cargar archivos:', err);
     } finally {
       setLoadingFiles(false);
     }
@@ -119,29 +138,32 @@ export default function AdminPage() {
   };
 
   const handleDelete = async (filename: string) => {
-    if (!confirm(`¿Estás seguro de eliminar "${filename}"?`)) {
-      return;
-    }
+    AlertaAdvertencia(
+      'Eliminar archivo',
+      `¿Estás seguro de eliminar "${sanitizeFilename(filename)}"?`,
+      async () => {
+        try {
+          const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+          const response = await fetch(`/api/files/delete/${encodeURIComponent(filename)}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
 
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/files/delete/${encodeURIComponent(filename)}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        fetchFiles();
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Error al eliminar el archivo');
+          if (response.ok) {
+            AlertaExito('Eliminado', 'Archivo eliminado correctamente');
+            fetchFiles();
+          } else {
+            const data = await response.json();
+            AlertaError('Error', data.error || 'Error al eliminar el archivo');
+          }
+        } catch (err) {
+          console.error('Error al eliminar el archivo:', err);
+          AlertaError('Error', 'Error al eliminar el archivo');
+        }
       }
-    } catch (error) {
-      console.error('Error al eliminar el archivo:', error);
-      alert('Error al eliminar el archivo');
-    }
+    );
   };
 
   const handleUpload = async (e: FormEvent) => {
@@ -153,7 +175,7 @@ export default function AdminPage() {
     setUploadSuccess(false);
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const formData = new FormData();
       formData.append('file', selectedFile);
 
@@ -170,13 +192,14 @@ export default function AdminPage() {
         setSelectedFile(null);
         const fileInput = document.getElementById('file-input') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
+        AlertaExito('Éxito', 'Archivo subido correctamente');
         fetchFiles();
       } else {
         const data = await response.json();
         setError(data.error || 'Error al subir el archivo');
       }
-    } catch (error) {
-      console.error('Error al subir el archivo:', error);
+    } catch (err) {
+      console.error('Error al subir el archivo:', err);
       setError('Error al subir el archivo');
     } finally {
       setUploading(false);
@@ -197,66 +220,56 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <p className="text-gray-600">Cargando...</p>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Loading />
       </div>
     );
   }
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 sm:p-8">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
               Inicio de Sesión - Admin
             </h1>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                  Usuario
-                </label>
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
+            <Form onSubmit={handleLogin} className="space-y-4">
+              <Input
+                label="Usuario"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Ingresa tu usuario"
+                required
+              />
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Contraseña
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
+              <Input
+                label="Contraseña"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Ingresa tu contraseña"
+                required
+              />
 
               {error && (
-                <div className="bg-red-50 text-red-700 px-4 py-3 rounded-md text-sm">
-                  {error}
-                </div>
+                <InfoAlert title="Error" text={error} />
               )}
 
-              <button
+              <Button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 sm:py-3 rounded-md hover:bg-blue-700 transition font-medium"
+                variant="primary"
+                isLoading={false}
+                className="w-full"
               >
                 Iniciar Sesión
-              </button>
-            </form>
+              </Button>
+            </Form>
 
             <div className="mt-6 text-center">
-              <Link href="/" className="text-blue-600 hover:text-blue-800 text-sm">
+              <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
                 Volver a inicio
               </Link>
             </div>
@@ -266,176 +279,123 @@ export default function AdminPage() {
     );
   }
 
+  const tableHeaders = ['Nombre', 'Tamaño', 'Fecha', 'Acciones'];
+  const tableRows = files.map((file) => [
+    sanitizeFilename(file.name),
+    formatFileSize(file.size),
+    formatDate(file.uploadedAt),
+    <div key={file.name} className="flex gap-2">
+      <a
+        href={file.downloadUrl}
+        className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+      >
+        Descargar
+      </a>
+      <button
+        onClick={() => handleDelete(file.name)}
+        className="text-red-600 dark:text-red-400 hover:underline text-sm"
+      >
+        Eliminar
+      </button>
+    </div>,
+  ]);
+
   return (
-    <div className="min-h-screen bg-gray-50 py-6 px-3 sm:py-8 sm:px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-3 sm:py-8 sm:px-4">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white text-center sm:text-left">
             Panel de Administración
           </h1>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             <Link
               href="/"
-              className="text-blue-600 hover:text-blue-800 font-medium text-center text-sm sm:text-base py-2 sm:py-0"
+              className="text-blue-600 dark:text-blue-400 hover:underline text-center text-sm sm:text-base py-2 sm:py-0"
             >
               Ver archivos
             </Link>
-            <button
+            <ClientOnly>
+              <ThemeToggle />
+            </ClientOnly>
+            <Button
+              variant="danger"
               onClick={handleLogout}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition text-sm sm:text-base"
+              className="text-sm"
             >
               Cerrar Sesión
-            </button>
+            </Button>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Subir Archivo</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">
+            Subir Archivo
+          </h2>
 
-          <form onSubmit={handleUpload} className="space-y-4 sm:space-y-6">
+          <Form onSubmit={handleUpload} className="space-y-4 sm:space-y-6">
             <div>
-              <label htmlFor="file-input" className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Seleccionar archivo
               </label>
               <input
                 id="file-input"
                 type="file"
                 onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500
+                className="block w-full text-sm text-gray-500 dark:text-gray-400
                   file:mr-2 sm:file:mr-4 file:py-2 file:px-3 sm:file:px-4
                   file:rounded file:border-0
                   file:text-xs sm:file:text-sm file:font-medium
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100
+                  file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300
+                  hover:file:bg-blue-100 dark:hover:file:bg-blue-800
                   file:cursor-pointer cursor-pointer"
               />
               {selectedFile && (
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                   Archivo: <span className="font-medium break-all">{sanitizeFilename(selectedFile.name)}</span>
                 </p>
               )}
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-700 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
+              <InfoAlert title="Error" text={error} />
             )}
 
             {uploadSuccess && (
-              <div className="bg-green-50 text-green-700 px-4 py-3 rounded-md text-sm">
-                Archivo subido exitosamente
-              </div>
+              <InfoAlert title="Éxito" text="Archivo subido exitosamente" />
             )}
 
-            <button
+            <Button
               type="submit"
-              disabled={!selectedFile || uploading}
-              className="w-full bg-blue-600 text-white py-2 sm:py-3 rounded-md hover:bg-blue-700 transition font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+              variant="primary"
+              isLoading={uploading}
+              loadingText="Subiendo..."
+              disabled={!selectedFile}
+              className="w-full"
             >
-              {uploading ? 'Subiendo...' : 'Subir Archivo'}
-            </button>
-          </form>
+              Subir Archivo
+            </Button>
+          </Form>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Archivos Subidos</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">
+            Archivos Subidos
+          </h2>
 
           {loadingFiles ? (
             <div className="text-center py-8">
-              <p className="text-gray-600">Cargando archivos...</p>
+              <Loading />
             </div>
           ) : files.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600">No hay archivos subidos</p>
+              <p className="text-gray-600 dark:text-gray-400">No hay archivos subidos</p>
             </div>
           ) : (
-            <div className="overflow-hidden">
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Nombre
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tamaño
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fecha
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {files.map((file, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {sanitizeFilename(file.name)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatFileSize(file.size)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(file.uploadedAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex flex-col sm:flex-row sm:gap-3 gap-2">
-                            <a
-                              href={file.downloadUrl}
-                              className="text-blue-600 hover:text-blue-900 font-medium"
-                            >
-                              Descargar
-                            </a>
-                            <button
-                              onClick={() => handleDelete(file.name)}
-                              className="text-red-600 hover:text-red-900 font-medium text-left"
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="sm:hidden divide-y divide-gray-200">
-                {files.map((file, index) => (
-                  <div key={index} className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900 break-all">
-                        {sanitizeFilename(file.name)}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                      <span>
-                        <span className="font-medium">Tamaño:</span> {formatFileSize(file.size)}
-                      </span>
-                      <span>
-                        <span className="font-medium">Fecha:</span> {formatDate(file.uploadedAt)}
-                      </span>
-                    </div>
-                    <div className="flex gap-4">
-                      <a
-                        href={file.downloadUrl}
-                        className="text-sm text-blue-600 hover:text-blue-900 font-medium"
-                      >
-                        Descargar
-                      </a>
-                      <button
-                        onClick={() => handleDelete(file.name)}
-                        className="text-sm text-red-600 hover:text-red-900 font-medium"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="overflow-x-auto">
+              <Table
+                columns={tableHeaders}
+                rows={tableRows}
+              />
             </div>
           )}
         </div>
