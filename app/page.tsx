@@ -47,13 +47,15 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:py-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Archivos Disponibles</h1>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left w-full sm:w-auto">
+            Archivos Disponibles
+          </h1>
           <Link
             href="/admin"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-center text-sm sm:text-base"
           >
             Administración
           </Link>
@@ -64,52 +66,80 @@ export default function Home() {
             <p className="text-gray-600">Cargando archivos...</p>
           </div>
         ) : files.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
+          <div className="bg-white rounded-lg shadow p-6 sm:p-8 text-center">
             <p className="text-gray-600">No hay archivos disponibles</p>
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nombre
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tamaño
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acción
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {files.map((file, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {sanitizeFilename(file.name)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatFileSize(file.size)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(file.uploadedAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <a
-                        href={file.downloadUrl}
-                        className="text-blue-600 hover:text-blue-900 font-medium"
-                      >
-                        Descargar
-                      </a>
-                    </td>
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Nombre
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tamaño
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fecha
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acción
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {files.map((file, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {sanitizeFilename(file.name)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatFileSize(file.size)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(file.uploadedAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <a
+                          href={file.downloadUrl}
+                          className="text-blue-600 hover:text-blue-900 font-medium"
+                        >
+                          Descargar
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="sm:hidden divide-y divide-gray-200">
+              {files.map((file, index) => (
+                <div key={index} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-900 break-all">
+                      {sanitizeFilename(file.name)}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                    <span>
+                      <span className="font-medium">Tamaño:</span> {formatFileSize(file.size)}
+                    </span>
+                    <span>
+                      <span className="font-medium">Fecha:</span> {formatDate(file.uploadedAt)}
+                    </span>
+                  </div>
+                  <a
+                    href={file.downloadUrl}
+                    className="inline-block text-sm text-blue-600 hover:text-blue-900 font-medium"
+                  >
+                    Descargar
+                  </a>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

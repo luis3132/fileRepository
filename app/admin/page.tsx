@@ -67,7 +67,7 @@ export default function AdminPage() {
         setUsername('');
         setPassword('');
       } else {
-        setError('Credenciales inválidas');
+        setError(data.error || 'Credenciales inválidas');
       }
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
@@ -133,7 +133,6 @@ export default function AdminPage() {
       });
 
       if (response.ok) {
-        // Recargar la lista de archivos
         fetchFiles();
       } else {
         const data = await response.json();
@@ -169,10 +168,8 @@ export default function AdminPage() {
       if (response.ok) {
         setUploadSuccess(true);
         setSelectedFile(null);
-        // Reset file input
         const fileInput = document.getElementById('file-input') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
-        // Recargar la lista de archivos
         fetchFiles();
       } else {
         const data = await response.json();
@@ -200,7 +197,7 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <p className="text-gray-600">Cargando...</p>
       </div>
     );
@@ -208,10 +205,10 @@ export default function AdminPage() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">
               Inicio de Sesión - Admin
             </h1>
 
@@ -252,7 +249,7 @@ export default function AdminPage() {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition font-medium"
+                className="w-full bg-blue-600 text-white py-2 sm:py-3 rounded-md hover:bg-blue-700 transition font-medium"
               >
                 Iniciar Sesión
               </button>
@@ -270,30 +267,32 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-6 px-3 sm:py-8 sm:px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
-          <div className="space-x-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left">
+            Panel de Administración
+          </h1>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <Link
               href="/"
-              className="text-blue-600 hover:text-blue-800 font-medium"
+              className="text-blue-600 hover:text-blue-800 font-medium text-center text-sm sm:text-base py-2 sm:py-0"
             >
               Ver archivos
             </Link>
             <button
               onClick={handleLogout}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition text-sm sm:text-base"
             >
               Cerrar Sesión
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Subir Archivo</h2>
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Subir Archivo</h2>
 
-          <form onSubmit={handleUpload} className="space-y-6">
+          <form onSubmit={handleUpload} className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="file-input" className="block text-sm font-medium text-gray-700 mb-2">
                 Seleccionar archivo
@@ -303,16 +302,16 @@ export default function AdminPage() {
                 type="file"
                 onChange={handleFileChange}
                 className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
+                  file:mr-2 sm:file:mr-4 file:py-2 file:px-3 sm:file:px-4
                   file:rounded file:border-0
-                  file:text-sm file:font-medium
+                  file:text-xs sm:file:text-sm file:font-medium
                   file:bg-blue-50 file:text-blue-700
                   hover:file:bg-blue-100
                   file:cursor-pointer cursor-pointer"
               />
               {selectedFile && (
                 <p className="mt-2 text-sm text-gray-600">
-                  Archivo seleccionado: <span className="font-medium">{sanitizeFilename(selectedFile.name)}</span>
+                  Archivo: <span className="font-medium break-all">{sanitizeFilename(selectedFile.name)}</span>
                 </p>
               )}
             </div>
@@ -332,15 +331,15 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={!selectedFile || uploading}
-              className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 text-white py-2 sm:py-3 rounded-md hover:bg-blue-700 transition font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {uploading ? 'Subiendo...' : 'Subir Archivo'}
             </button>
           </form>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Archivos Subidos</h2>
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Archivos Subidos</h2>
 
           {loadingFiles ? (
             <div className="text-center py-8">
@@ -352,53 +351,91 @@ export default function AdminPage() {
             </div>
           ) : (
             <div className="overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nombre
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tamaño
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fecha
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {files.map((file, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {sanitizeFilename(file.name)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatFileSize(file.size)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(file.uploadedAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
-                        <a
-                          href={file.downloadUrl}
-                          className="text-blue-600 hover:text-blue-900 font-medium"
-                        >
-                          Descargar
-                        </a>
-                        <button
-                          onClick={() => handleDelete(file.name)}
-                          className="text-red-600 hover:text-red-900 font-medium"
-                        >
-                          Eliminar
-                        </button>
-                      </td>
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nombre
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tamaño
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {files.map((file, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {sanitizeFilename(file.name)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatFileSize(file.size)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(file.uploadedAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex flex-col sm:flex-row sm:gap-3 gap-2">
+                            <a
+                              href={file.downloadUrl}
+                              className="text-blue-600 hover:text-blue-900 font-medium"
+                            >
+                              Descargar
+                            </a>
+                            <button
+                              onClick={() => handleDelete(file.name)}
+                              className="text-red-600 hover:text-red-900 font-medium text-left"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="sm:hidden divide-y divide-gray-200">
+                {files.map((file, index) => (
+                  <div key={index} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900 break-all">
+                        {sanitizeFilename(file.name)}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                      <span>
+                        <span className="font-medium">Tamaño:</span> {formatFileSize(file.size)}
+                      </span>
+                      <span>
+                        <span className="font-medium">Fecha:</span> {formatDate(file.uploadedAt)}
+                      </span>
+                    </div>
+                    <div className="flex gap-4">
+                      <a
+                        href={file.downloadUrl}
+                        className="text-sm text-blue-600 hover:text-blue-900 font-medium"
+                      >
+                        Descargar
+                      </a>
+                      <button
+                        onClick={() => handleDelete(file.name)}
+                        className="text-sm text-red-600 hover:text-red-900 font-medium"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
